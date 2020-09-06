@@ -25,7 +25,8 @@ from backports.pbkdf2 import pbkdf2_hmac
 import secrets
 import string
 
-
+# References
+#https://www.youtube.com/watch?v=w68BBPDAWr8&ab_channel=Computerphile
 
 
 # Class KeyChain to use a password manager.
@@ -33,17 +34,6 @@ import string
 # It takes care of all your passwords
 # It uses Pycryptome
 class KeyChain(object):
-    
-    
-    def __init__(self,masterPassword,representationCipher=None,trustedDataCheck=None):
-        if(representationCipher==None and trustedDataCheck==None):
-            return self.init(masterPassword)
-        elif(representationCipher!=None and trustedDataCheck!=None):
-            return self.load(masterPassword,representationCipher,trustedDataCheck)
-        else:
-            #A param might be missing
-            return False
-
     # Inititalize function init
     # masterPassword use to encrypt and decrypt aplication-password
     def init(self,masterPassword):
@@ -52,36 +42,42 @@ class KeyChain(object):
             return False
         #Assign our masterPassword
         self.masterPassword=masterPassword
-        self.passwordManager={}
-        self.authenticated = True
-        self.pbkdf2Password(masterPassword)
+        self.vaultKey = self.pbkdf2Password(self.masterPassword)
+        self.passwords={}
+        self.vaultKey = self.pbkdf2Password(self.masterPassword)
+        self.authenticationKey = self.pbkdf2Password(self.masterPassword + self.vaultKey)
 
-    def pbkdf2Password(self):
+    def pbkdf2Password(self,password,saltPassword=None):
         #We initialize our PBKDF2 password
-        prf="sha256"
-        iterationCount=500000
-        secure_str = ''.join((secrets.choice(string.ascii_letters) for i in range(64)))
-        self.saltPassword = secure_str.encode("utf8")
-        
+        # secure_str = ''.join((secrets.choice(string.ascii_letters) for i in range(64)))
+        self.saltPassword ='iEPBCwJhBTlrGcIRSAyaXvKmlhdPnyxFKNjrDJHhQlTjoehyfRHgsRDCSSCdJDUM'  if saltPassword==None else saltPassword 
         #More iterations count, more secured hashed password but more time and less efficiency on algorithm
         iterationCount=5000
         dkLen=64
         prf="sha256"
         #We apply pbkdf2 to our params to get a derivedKey
-        self.derivedKey = pbkdf2_hmac(prf, self.masterPassword.encode("utf8"), self.saltPassword, iterationCount, dkLen)
+        return pbkdf2_hmac(prf, password, self.saltPassword, iterationCount, dkLen)
 
     # Load a KeyChain
     def load(self,masterPassword,representationCipher,trustedDataCheck):
         # First we verify masterPassword
-        # First line in code will have the password encrypted
-        if(masterPassword):
-            #self.masterPassword = masterPassword decrypted
-            #self.passwordManagerEncrypted = representationCipher decrypted
-            self.pbkdf2Password(masterPassword)
-            self.passwordManagerEncrypted = {}
-            self.authenticated = True
+        self.masterPassword = masterPassword
+        self.vaultKey = self.pbkdf2Password(self.masterPassword)
+        self.authenticationKey = self.pbkdf2Password(self.masterPassword + self.vaultKey)
+        #Decrypt representationCipher to have the decrypt
+        if(self.authenticationKey==True):
+            #Trusted data check hash is hash representation cipher
+            if(self.trustedDataCheck==True):
+                self.authenticated=True
+                #self.passwords= decrypt(representationCipher).toDictionary()
+            else:
+                self.authenticated = True
         else:
             # Master Password is wrong
+            self.authenticated=False
+            self.masterPassword=None
+            self.vaultKey=None
+            self.authenticationKey=None
             return False
 
     # Generates a cipher of self.passwordManager and the respective self.hashsha256 of self.psswordManager
@@ -91,21 +87,27 @@ class KeyChain(object):
         #return null if error
     
     # Generates a the value to add to the passwordManager
-    def set(application, password):
+    def set(self,application, password):
         #Convert application to hash
         #Encrypt password using GCM and masterPassword
         self.passwordManagerEncrypted[application]=password 
 
     # Gets the value of password manager
-    def get(application):
+    def get(self,application):
         #Convert application to hash check if exists
         return None
         #Decrypt password using GCM and masterPassword
         return self.passwordManagerEncrypted[application]
 
     # Removes the application of password manager
-    def remove(application):
+    def remove(self,application):
         #Convert application to hash check if exists
         return None
         #Decrypt password using GCM and masterPassword
         #Remove from dictionary  
+
+
+
+#Generate masterPassword by appending your user and password
+
+# To authenticate we do pdkf2 with the vault key and the password again 5000 on your client authentication key
