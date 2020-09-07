@@ -87,6 +87,7 @@ class KeyChain(object):
     # masterPassword use to encrypt and decrypt aplication-password
     def __init__(self):
         self.reset()
+        self.resetFiles()
 
     def reset(self):
         self.authenticated=False
@@ -96,10 +97,14 @@ class KeyChain(object):
         self.authenticationKey=None
         self.saltPassword=None
 
+    def resetFiles(self):
+        self.filePass=None
+        self.fileAuth=None
+        self.fileSha = None
+
     def init(self,masterPassword):
         if(len(masterPassword)>64 or len(masterPassword)<1):
-            print("Password must be between 1 and 64 characters.")
-            return False
+            return False, "La contraseña tiene que tener entre 1 y 64 caracteres."
         #Assign our masterPassword
         self.masterPassword=masterPassword
         self.saltPassword = ''.join((secrets.choice(string.ascii_letters) for i in range(64))) 
@@ -107,6 +112,7 @@ class KeyChain(object):
         self.authenticationKey = self.pbkdf2Password(self.masterPassword + self.vaultKey.decode('latin-1'))
         self.passwords={}
         self.authenticated=True
+        return [True]
 
     #pdkf2Password that is used
     def pbkdf2Password(self,password):
@@ -124,9 +130,8 @@ class KeyChain(object):
         try:
             authentication = readObjectInFile(authenticationFile)
         except binascii.Error:
-            print("Error. The passwords file has been changed.")
             self.reset()
-            return False
+            return False, "Error. El archivo de autenticación ha sido alterado."
         self.saltPassword = authentication['saltPassword']
 
         # First we verify masterPassword
@@ -138,18 +143,16 @@ class KeyChain(object):
         try:
             applicationHashMac = HMAC.new(key=self.vaultKey, digestmod=SHA256, msg= readFile(fileName=representationCipherFile, encode=True))
         except binascii.Error:
-            print("Error. The passwords file has been changed.")
             self.reset()
-            return False
+            return False, "Error. El archivo de las contraseñas ha sido alterado."
         applicationHash = applicationHashMac.digest()
 
         # Read the trusted hash file 
         try:
             trustedHash = readFile(fileName=trustedDataCheckFile, encode=False) 
         except binascii.Error:
-            print("Error. The passwords file has been changed.")
             self.reset()
-            return False
+            return False, "Error. El archivo del Sha265 ha sido alterado."
         
         #Decrypt representationCipher to have the decrypt
         if(self.authenticationKey == authentication['authenticationKey'].encode('latin-1')):
@@ -157,16 +160,15 @@ class KeyChain(object):
             if(applicationHash == trustedHash):
                 self.authenticated=True
                 self.passwords= readObjectInFile(fileName=representationCipherFile)
-                return True
+                return [True]
             else:
                 #There could be a possible rollback or swap
-                print("Error. The passwords file has been changed.")
                 self.reset()
-                return False
+                return False, "Error. Podría haber una posible ataque rollback o swap."
         else:
             # Master Password is wrong
             self.reset()
-            return False
+            return False, "La contraseña maestra es incorrecta."
 
     #Function to save keyChain files
     def saveKeyChain(self,representationCipherFileName,trustedDataCheckFileName,authenticationFileName):
@@ -196,7 +198,7 @@ class KeyChain(object):
             return False
         #Check if password length
         if(len(password)>64 or len(password)<1):
-            print("Password must be between 1 and 64 characters.")
+            print("La contraseña tiene que tener entre 1 y 64 caracteres.")
             return False
         if(len(password)<64):
             password=password.encode('latin-1')

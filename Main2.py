@@ -7,11 +7,6 @@ from KeyChain import KeyChain
 
 pm=KeyChain()
 
-def validateLogin(masterPassword):
-	
-	return
-
-
 def openFilePass():
     pm.filePass =  filedialog.askopenfilename(initialdir = sys.path,title = "Select file",filetypes = (("txt","*.txt"),("all files","*.*")))
     passFileName.set(pm.filePass.split("/").pop())
@@ -28,13 +23,26 @@ def openFileAuth():
     return
 
 def init():
-    pm.init(newMasterPassword.get())
-    print(pm.passwords)
+    response = pm.init(newMasterPassword.get())
+    if(response[0]):
+        errorTab1.set('')
+        print(pm.passwords)
+    else:
+        errorTab1.set(response[1])
     return
 
 def load():
-    pm.load(masterPassword.get(),passFileName.get(),sha256FileName.get(),authFileName.get())
-    print(pm.passwords)
+    if(pm.filePass == None or pm.fileSha == None or pm.fileAuth == None):
+        errorTab2.set('No se han cargado todos los archivos')
+        return
+    else:
+        errorTab2.set('')   
+    response = pm.load(masterPassword.get(),pm.filePass,pm.fileSha,pm.fileAuth)
+    if(response[0]):
+        errorTab2.set('')
+        print(pm.passwords)
+    else:
+        errorTab2.set(response[1])
     return
 
 
@@ -51,6 +59,7 @@ tab2 = ttk.Frame(tab_control)
 
 # Tab1 elements
 newMasterPassword = StringVar()
+errorTab1 = StringVar()
 initFunction = partial(init)
 
 Label(tab1,text="KeyChain Passwords", bg="red", width="300", height="2", font=("Calibri", 13)).pack() 
@@ -59,12 +68,14 @@ Label(tab1, text="Master Password",).pack()
 Entry(tab1, textvariable=newMasterPassword,show="*").pack()
 Label(tab1,text="").pack() 
 Button(tab1,text="Crear Llavero", height="2", width="30",command=initFunction).pack() 
+Label(tab1,textvariable=errorTab1, fg="red").pack() 
  
 # Tab2 elements
 masterPassword = StringVar()
 passFileName = StringVar()
 sha256FileName = StringVar()
 authFileName = StringVar()
+errorTab2 = StringVar()
 loadFunction = partial(load)
 
 Label(tab2,text="KeyChain Passwords", bg="red", width="300", height="2", font=("Calibri", 13)).pack() 
@@ -79,6 +90,7 @@ Label(tab2,textvariable=sha256FileName).pack()
 Button(tab2,text="Cargar Auténticación", height="2", width="30",command=openFileAuth).pack() 
 Label(tab2,textvariable=authFileName).pack() 
 Button(tab2,text="Cargar Llavero", height="2", width="30",command=loadFunction).pack() 
+Label(tab2,textvariable=errorTab2, fg="red").pack() 
 
 #Tabs config
 tab_control.add(tab1, text='Crear Llavero ')
