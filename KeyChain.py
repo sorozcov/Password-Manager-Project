@@ -95,6 +95,9 @@ class KeyChain(object):
         self.masterPassword=None
         self.authenticationKey=None
         self.saltPassword=None
+        self.filePass=None
+        self.fileAuth=None
+        self.fileSha = None
 
     def init(self,masterPassword):
         if(len(masterPassword)>64 or len(masterPassword)<1):
