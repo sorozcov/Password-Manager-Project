@@ -43,14 +43,13 @@ class KeyChain(object):
         #Assign our masterPassword
         self.masterPassword=masterPassword
         self.vaultKey = self.pbkdf2Password(self.masterPassword)
-        self.passwords={}
-        self.vaultKey = self.pbkdf2Password(self.masterPassword)
         self.authenticationKey = self.pbkdf2Password(self.masterPassword + self.vaultKey)
+        self.saltPassword = ''.join((secrets.choice(string.ascii_letters) for i in range(64))) 
+        self.passwords={}
+        self.authenticated=True
 
     def pbkdf2Password(self,password,saltPassword=None):
         #We initialize our PBKDF2 password
-        # secure_str = ''.join((secrets.choice(string.ascii_letters) for i in range(64)))
-        self.saltPassword ='iEPBCwJhBTlrGcIRSAyaXvKmlhdPnyxFKNjrDJHhQlTjoehyfRHgsRDCSSCdJDUM'  if saltPassword==None else saltPassword 
         #More iterations count, more secured hashed password but more time and less efficiency on algorithm
         iterationCount=5000
         dkLen=64
@@ -59,7 +58,10 @@ class KeyChain(object):
         return pbkdf2_hmac(prf, password, self.saltPassword, iterationCount, dkLen)
 
     # Load a KeyChain
-    def load(self,masterPassword,representationCipher,trustedDataCheck):
+    def load(self,masterPassword,representationCipherFile,trustedDataCheckFile,authenticationFile):
+
+        #representationCipherFile objeto encriptado, desencriptar el objeto
+        # leer authenticationFile y asignar salt y leer authentication key del file
         # First we verify masterPassword
         self.masterPassword = masterPassword
         self.vaultKey = self.pbkdf2Password(self.masterPassword)
@@ -71,18 +73,35 @@ class KeyChain(object):
                 self.authenticated=True
                 #self.passwords= decrypt(representationCipher).toDictionary()
             else:
-                self.authenticated = True
+                self.authenticated=False
+                self.masterPassword=None
+                self.vaultKey=None
+                self.authenticationKey=None
+                self.authenticated = False
         else:
             # Master Password is wrong
             self.authenticated=False
             self.masterPassword=None
             self.vaultKey=None
             self.authenticationKey=None
+            self.authenticated = False
             return False
+
+    def saveFile():
+        #saveFile
+        print("saveFile")
+
+    # def saveKeyChain():
+    #     #llamar a dump
+    #     self.dump()
+    #     saveFile(objetoCifrado)
+    #     saveFile(sha256)
+    #     saveFile(authenticationKeySalt)
 
     # Generates a cipher of self.passwordManager and the respective self.hashsha256 of self.psswordManager
     def dump(self):
         return True
+        #Cipher (self.passwordManager,self.hashsha256)
         #return (self.passwordManager,self.hashsha256)
         #return null if error
     
@@ -111,3 +130,10 @@ class KeyChain(object):
 #Generate masterPassword by appending your user and password
 
 # To authenticate we do pdkf2 with the vault key and the password again 5000 on your client authentication key
+
+
+passwords={
+    'fjdsakfasdj':'jfdaljfdkldjl;sf'
+}
+
+passwords.toString() AESGCM
