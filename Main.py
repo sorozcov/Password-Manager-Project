@@ -1,3 +1,9 @@
+# ---------------------------------------------------------------------------- #
+#                      Universidad del Valle de Guatemala                      #
+#                      Cifrado de información 2020 2                           #
+#                      Grupo 7                                                 #
+#                      Main.py                                                 #
+# ---------------------------------------------------------------------------- #
 from tkinter import *
 from tkinter import ttk
 from functools import partial
@@ -6,6 +12,7 @@ import os,sys
 from KeyChain import KeyChain
 
 pm=KeyChain()
+
 
 
 def InitScreen(screen):
@@ -35,7 +42,9 @@ def StartScreen():
         if(response[0]):
             errorTab1.set('')
             tab_control.destroy()
+            pm.resetFiles()
             InitScreen(MainScreen)
+            
         else:
             errorTab1.set(response[1])
         return
@@ -50,6 +59,7 @@ def StartScreen():
         if(response[0]):
             errorTab2.set('')
             tab_control.destroy()
+            pm.resetFiles()
             InitScreen(MainScreen)
         else:
             errorTab2.set(response[1])
@@ -97,6 +107,7 @@ def StartScreen():
     Button(tab2,text="Cargar Llavero", height="2", width="30",command=load, bg='blue', fg='white').pack() 
     Label(tab2,textvariable=errorTab2, fg="red").pack() 
     
+
 
 def MainScreen():
     
@@ -152,7 +163,11 @@ def MainScreen():
             return
         pm.saveKeyChain(pm.filePass,pm.fileSha,pm.fileAuth)
         tab_control.destroy()
+        pm.reset()
+        pm.resetFiles()
         InitScreen(StartScreen)
+
+
         
     
     # Tabs init
@@ -238,7 +253,12 @@ def MainScreen():
 app = Tk()   # create a GUI window 
 app.geometry("600x400") # set the configuration of GUI window 
 app.title("KeyChain") # set the title of GUI window
+
+app.iconbitmap('KeyChain.ico')
 #Init the GUI
 InitScreen(StartScreen)
 #Start the GUI
 app.mainloop() 
+
+#pyinstaller.exe --onefile --icon=KeyChain.ico Main.py
+#https://screenrec.com/share/LGcI9e7Hs8

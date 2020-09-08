@@ -129,10 +129,11 @@ class KeyChain(object):
         # Read the authenticationFile
         try:
             authentication = readObjectInFile(authenticationFile)
+            self.saltPassword = authentication['saltPassword']
         except binascii.Error:
             self.reset()
             return False, "Error. El archivo de autenticación ha sido alterado."
-        self.saltPassword = authentication['saltPassword']
+        
 
         # First we verify masterPassword
         self.masterPassword = masterPassword
