@@ -164,7 +164,7 @@ class KeyChain(object):
             else:
                 #There could be a possible rollback or swap
                 self.reset()
-                return False, "Error. Podría haber una posible ataque rollback o swap."
+                return False, "Error. Podría haber un posible ataque rollback o swap."
         else:
             # Master Password is wrong
             self.reset()
@@ -195,11 +195,10 @@ class KeyChain(object):
     def set(self,application, password):
         #Throw exception if not authenticated
         if(not self.authenticated):
-            return False
+            return False, 'Error. El usuario no esta autenticado.'
         #Check if password length
         if(len(password)>64 or len(password)<1):
-            print("La contraseña tiene que tener entre 1 y 64 caracteres.")
-            return False
+            return False, "La contraseña tiene que tener entre 1 y 64 caracteres."
         if(len(password)<64):
             password=password.encode('latin-1')
             password=pad(password,64)
@@ -210,41 +209,42 @@ class KeyChain(object):
         passwordEncryptedBytes = cipherPasswords.encrypt(password)
         passwordEncrypted = passwordEncryptedBytes.decode('latin-1')
         self.passwords[applicationHash]=passwordEncrypted
-        return True
+        return True, "Se agrego la contraseña correctamente"
 
 
     # Gets the value of password manager
     def get(self,application):
         #Throw exception if not authenticated
         if(not self.authenticated):
-            return False
+            return False, 'Error. El usuario no esta autenticado.'
         #Only if authenticated
         applicationHashMac = HMAC.new(key=self.vaultKey, digestmod=SHA256,msg=application.encode('latin-1'))
         applicationHash = applicationHashMac.hexdigest()
         #Check if our password manager has that application
         if(not applicationHash in self.passwords.keys()):
-            return None
+            return False, 'No existe una contraseña para esta aplicación.'
         #If it has the application continue
         cipherPasswords = AES.new(self.vaultKey, AES.MODE_GCM,self.vaultKey)
         passwordDecryptedBytes = cipherPasswords.decrypt(self.passwords[applicationHash].encode('latin-1'))
         passwordDecryptedBytes = unpad(passwordDecryptedBytes,64)
         passwordDecrypted = passwordDecryptedBytes.decode('latin-1')
         
-        return passwordDecrypted
+        return True, passwordDecrypted
 
     # Removes the application of password manager
     def remove(self,application):
         #Throw exception if not authenticated
         if(not self.authenticated):
-            return False
+            return False, 'Error. El usuario no esta autenticado.'
         #Only if authenticated
         applicationHashMac = HMAC.new(key=self.vaultKey, digestmod=SHA256,msg=application.encode('latin-1'))
         applicationHash = applicationHashMac.hexdigest()
         #Check if our password manager has that application
         if(not applicationHash in self.passwords.keys()):
-            return False
+            return False, 'La aplicación no ha sido creada.'
         #Remove from password
         del self.passwords[applicationHash]  
+        return True, "Se ha eliminado correctamente la aplicación"
 
 
 
