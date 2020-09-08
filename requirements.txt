@@ -1,1 +1,4 @@
 backports.pbkdf2
+pyinstaller
+functools
+Crypto
