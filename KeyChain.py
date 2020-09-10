@@ -96,6 +96,7 @@ class KeyChain(object):
         self.masterPassword=None
         self.authenticationKey=None
         self.saltPassword=None
+        self.hashRealTime=None
 
     def resetFiles(self):
         self.filePass=None
@@ -112,6 +113,7 @@ class KeyChain(object):
         self.authenticationKey = self.pbkdf2Password(self.masterPassword + self.vaultKey.decode('latin-1'))
         self.passwords={}
         self.authenticated=True
+        self.saveHashRealTime()
         return [True]
 
     #pdkf2Password that is used
@@ -147,7 +149,7 @@ class KeyChain(object):
             self.reset()
             return False, "Error. El archivo de las contraseñas ha sido alterado."
         applicationHash = applicationHashMac.digest()
-
+        
         # Read the trusted hash file 
         try:
             trustedHash = readFile(fileName=trustedDataCheckFile, encode=False) 
@@ -161,6 +163,7 @@ class KeyChain(object):
             if(applicationHash == trustedHash):
                 self.authenticated=True
                 self.passwords= readObjectInFile(fileName=representationCipherFile)
+                self.saveHashRealTime()
                 return [True]
             else:
                 #There could be a possible rollback or swap
@@ -197,6 +200,8 @@ class KeyChain(object):
         #Throw exception if not authenticated
         if(not self.authenticated):
             return False, 'Error. El usuario no esta autenticado.'
+        if(not self.verifySwapAndRollbackAttack()):
+            return False, 'Error. Probable ataque de swap en cambio de data.'
         #Check if password length
         if(len(password)>64 or len(password)<1):
             return False, "La contraseña tiene que tener entre 1 y 64 caracteres."
@@ -210,6 +215,7 @@ class KeyChain(object):
         passwordEncryptedBytes = cipherPasswords.encrypt(password)
         passwordEncrypted = passwordEncryptedBytes.decode('latin-1')
         self.passwords[applicationHash]=passwordEncrypted
+        self.saveHashRealTime()
         return True, "Se agrego la contraseña correctamente"
 
 
@@ -218,6 +224,8 @@ class KeyChain(object):
         #Throw exception if not authenticated
         if(not self.authenticated):
             return False, 'Error. El usuario no esta autenticado.'
+        if(not self.verifySwapAndRollbackAttack()):
+            return False, 'Error. Probable ataque de swap en cambio de data.'
         #Only if authenticated
         applicationHashMac = HMAC.new(key=self.vaultKey, digestmod=SHA256,msg=application.encode('latin-1'))
         applicationHash = applicationHashMac.hexdigest()
@@ -237,6 +245,8 @@ class KeyChain(object):
         #Throw exception if not authenticated
         if(not self.authenticated):
             return False, 'Error. El usuario no esta autenticado.'
+        if(not self.verifySwapAndRollbackAttack()):
+            return False, 'Error. Probable ataque de swap en cambio de data.'
         #Only if authenticated
         applicationHashMac = HMAC.new(key=self.vaultKey, digestmod=SHA256,msg=application.encode('latin-1'))
         applicationHash = applicationHashMac.hexdigest()
@@ -245,7 +255,36 @@ class KeyChain(object):
             return False, 'La aplicación no ha sido creada.'
         #Remove from password
         del self.passwords[applicationHash]  
+        self.saveHashRealTime()
         return True, "Se ha eliminado correctamente la aplicación"
+
+    
+
+    #Implementation of swap or rollback attack on real time
+    # Swap Attack Simulation
+    def swapAttackSimulation(self,key1,key2):
+        try:
+            #Make a swap between keys as if simulator was able to do it from the database
+            pass1=self.passwords[key1]
+            pass2=self.passwords[key2]
+            self.password[key2]=pass1
+            self.password[key1]=pass2
+            return True
+        except:
+            return False
+    
+    #Verify Hash on Real Time
+    def verifySwapAndRollbackAttack(self):
+        if(self.hashRealTime==self.dump()[1]):
+            #There has been no swap or rollback
+            return True
+        #There has been a rollback or swap attack
+        return False
+
+    #Maintain a real time hash to verify trusted data information
+    def saveHashRealTime(self):
+       self.hashRealTime=self.dump()[1]
+
 
 
 
