@@ -212,12 +212,12 @@ class KeyChain(object):
         #Only if authenticated
         applicationHashMac = HMAC.new(key=self.vaultKey, digestmod=SHA256,msg=application.encode('latin-1'))
         applicationHash = applicationHashMac.hexdigest()
-        cipherPasswords = AES.new(self.vaultKey, AES.MODE_GCM,self.vaultKey)
+        cipherPasswords = AES.new(self.vaultKey, AES.MODE_GCM, applicationHashMac.digest())
         passwordEncryptedBytes = cipherPasswords.encrypt(password)
         passwordEncrypted = passwordEncryptedBytes.decode('latin-1')
         self.passwords[applicationHash]=passwordEncrypted
         self.saveHashRealTime()
-        return True, "Se agrego la contraseña correctamente"
+        return True, "Se agrego la contraseña correctamente", applicationHash
 
 
     # Gets the value of password manager
@@ -234,7 +234,7 @@ class KeyChain(object):
         if(not applicationHash in self.passwords.keys()):
             return False, 'No existe una contraseña para esta aplicación.'
         #If it has the application continue
-        cipherPasswords = AES.new(self.vaultKey, AES.MODE_GCM,self.vaultKey)
+        cipherPasswords = AES.new(self.vaultKey, AES.MODE_GCM, applicationHashMac.digest())
         passwordDecryptedBytes = cipherPasswords.decrypt(self.passwords[applicationHash].encode('latin-1'))
         passwordDecryptedBytes = unpad(passwordDecryptedBytes,64)
         passwordDecrypted = passwordDecryptedBytes.decode('latin-1')
@@ -257,7 +257,7 @@ class KeyChain(object):
         #Remove from password
         del self.passwords[applicationHash]  
         self.saveHashRealTime()
-        return True, "Se ha eliminado correctamente la aplicación"
+        return True, "Se ha eliminado correctamente la aplicación", applicationHash
 
     
 
@@ -266,18 +266,18 @@ class KeyChain(object):
     def swapAttackSimulation(self):
         try:
             #Make a swap between keys as if simulator was able to do it from the database
-            if(len(self.passwords)>2):
-                app1, pass1 = random.choice(list(d.items()))
-                app2, pass2 = random.choice(list(d.items()))
+            if(len(self.passwords)>=2):
+                app1, pass1 = random.choice(list(self.passwords.items()))
+                app2, pass2 = random.choice(list(self.passwords.items()))
                 while(app1==app2):
-                    app2, pass2 = random.choice(list(d.items()))
-                self.password[app1]=pass2
-                self.password[app2]=pass1
-                return True
+                    app2, pass2 = random.choice(list(self.passwords.items()))
+                self.passwords[app1]=pass2
+                self.passwords[app2]=pass1
+                return True, 'Se ha simulado el Swap Attack exitosamente.'
             else:
-                return False
+                return False, 'Error. Se necesitan al menos dos aplicaciones con sus contraseñas en la base de datos.'
         except:
-            return False
+            return False, 'Error. Se necesitan al menos dos aplicaciones con susu contraseñas en la base de datos.'
     
     #Verify Hash on Real Time
     def verifySwapAndRollbackAttack(self):

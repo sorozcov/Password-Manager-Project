@@ -142,6 +142,7 @@ def MainScreen():
         if(response[0]):
             infoTab2.set(response[1])
             labelNewApplication.config(fg="green")
+            resetApplicationList()
         else:
             infoTab2.set(response[1])
             labelNewApplication.config(fg="red")
@@ -152,6 +153,7 @@ def MainScreen():
         if(response[0]):
             infoTab3.set(response[1])
             labelApplicationToRemove.config(fg="green")
+            resetApplicationList()
         else:
             infoTab3.set(response[1])
             labelApplicationToRemove.config(fg="red")
@@ -167,6 +169,19 @@ def MainScreen():
         pm.resetFiles()
         InitScreen(StartScreen)
 
+    def swapAttackSimulation():
+        response = pm.swapAttackSimulation()
+        if(response[0]):
+            infoTab5.set(response[1])
+            labelSimulationInfo.config(fg="green")
+        else:
+            infoTab5.set(response[1])
+            labelSimulationInfo.config(fg="red")
+        return  
+
+    def resetApplicationList():
+        applicationList.set('\n'.join('-'*80 + '\n{} : \n{}'.format(k, d) for k, d in pm.passwords.items()))
+
 
         
     
@@ -176,16 +191,19 @@ def MainScreen():
     tab2 = ttk.Frame(tab_control)
     tab3 = ttk.Frame(tab_control)
     tab4 = ttk.Frame(tab_control)
+    tab5 = ttk.Frame(tab_control)
     tab_control.add(tab1, text='Consultar Contraseñas')
     tab_control.add(tab2, text='Agregar Contraseña')
     tab_control.add(tab3, text='Eliminar Contraseña')
     tab_control.add(tab4, text='Guardar y Cerrar Sesión')
+    tab_control.add(tab5, text='Simular Swap Attack')
     tab_control.pack(expand=1, fill='both')
 
 
     # Tab1 elements
     applicationToSearch = StringVar()
     passwordOfApplication = StringVar()
+    applicationList = StringVar()
     passwordOfApplication.set('Contraseña: ')
     errorTab1 = StringVar()
 
@@ -197,8 +215,29 @@ def MainScreen():
     Button(tab1,text="Buscar Contraseña", height="2", width="30",command=getPassword, bg='blue', fg='white').pack() 
     Label(tab1,textvariable=errorTab1, fg="red").pack()
     Label(tab1,text="").pack() 
-    Label(tab1,text="").pack() 
     Label(tab1, textvariable=passwordOfApplication, bg='#00aae4', fg='white', width="40", height="2", borderwidth=2, relief="solid", font=("Calibri", 10)).pack()
+    Label(tab1,text="").pack()
+    Label(tab1,text="Lista de llaves:").pack()
+    canvas = Canvas(tab1)
+    scrollbar = Scrollbar(tab1, command=canvas.yview)
+    scrollable_frame = Frame(canvas)
+    scrollable_frame.bind(
+        "<Configure>",
+        lambda e: canvas.configure(
+            scrollregion=canvas.bbox("all")
+        )
+    )
+    canvas.create_window((150, 0), window=scrollable_frame, anchor="nw")
+
+    canvas.configure(yscrollcommand=scrollbar.set)
+
+    canvas.pack(side="left", fill="both", expand=True)
+
+    scrollbar.pack( side = RIGHT, fill = Y) 
+    
+    label = Label(scrollable_frame,textvariable=applicationList, wraplength=900, justify="left")
+    resetApplicationList()
+    label.pack()
 
     # Tab2 elements
     newApplication = StringVar()
@@ -248,12 +287,21 @@ def MainScreen():
     Button(tab4,text="Cerrar Sesión", height="2", width="30",command=saveKeyChain, bg='blue', fg='white').pack() 
     Label(tab4,textvariable=errorTab4, fg="red").pack() 
 
+    # Tab4 elements
+    infoTab5 = StringVar()
+
+    Label(tab5,text="Simular Swap Attack", bg='#00aae4', fg='white', width="300", height="2", font=("Calibri", 13)).pack() 
+    Label(tab5,text="").pack() 
+    Button(tab5,text="Simular", height="2", width="30",command=swapAttackSimulation, bg='blue', fg='white').pack() 
+    labelSimulationInfo = Label(tab5,textvariable=infoTab5, fg="red") 
+    labelSimulationInfo.pack() 
+
 
 #Create the app
 app = Tk()   # create a GUI window 
-app.geometry("600x400") # set the configuration of GUI window 
+app.geometry("700x500") # set the configuration of GUI window 
 app.title("KeyChain") # set the title of GUI window
-
+app.resizable(height = False, width = False)
 app.iconbitmap('KeyChain.ico')
 #Init the GUI
 InitScreen(StartScreen)
