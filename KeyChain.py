@@ -23,6 +23,7 @@
 # Import pbkdf2 Library to Use
 from backports.pbkdf2 import pbkdf2_hmac
 import secrets
+import random
 import string
 from Crypto.Cipher import AES
 from Crypto.Random import get_random_bytes
@@ -262,14 +263,19 @@ class KeyChain(object):
 
     #Implementation of swap or rollback attack on real time
     # Swap Attack Simulation
-    def swapAttackSimulation(self,key1,key2):
+    def swapAttackSimulation(self):
         try:
             #Make a swap between keys as if simulator was able to do it from the database
-            pass1=self.passwords[key1]
-            pass2=self.passwords[key2]
-            self.password[key2]=pass1
-            self.password[key1]=pass2
-            return True
+            if(len(self.passwords)>2):
+                app1, pass1 = random.choice(list(d.items()))
+                app2, pass2 = random.choice(list(d.items()))
+                while(app1==app2):
+                    app2, pass2 = random.choice(list(d.items()))
+                self.password[app1]=pass2
+                self.password[app2]=pass1
+                return True
+            else:
+                return False
         except:
             return False
     
