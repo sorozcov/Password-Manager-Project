@@ -32,7 +32,8 @@ from Crypto.Random import get_random_bytes
 from Crypto.Hash import HMAC, SHA256
 import pickle
 import binascii
-
+# Video showing how it works
+# https://screenrec.com/share/OVWoKQufjc
 # References
 # https://www.youtube.com/watch?v=w68BBPDAWr8&ab_channel=Computerphile
 
